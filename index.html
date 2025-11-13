@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trắc Nghiệm Lý-Sinh</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Sử dụng font Inter làm font chữ mặc định */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Lớp tùy chỉnh cho đáp án được chọn */
+        .option-selected {
+            background-color: #dbeafe !important; /* Tailwind's blue-100 */
+            border-color: #60a5fa !important; /* Tailwind's blue-400 */
+            box-shadow: 0 0 0 2px #93c5fd; /* Tailwind's blue-300 ring */
+        }
+        /* Lớp cho đáp án đúng trong phần review */
+        .review-correct {
+            border-left: 4px solid #4ade80; /* Tailwind's green-400 */
+            background-color: #f0fdf4; /* Tailwind's green-50 */
+        }
+        /* Lớp cho đáp án sai trong phần review */
+        .review-wrong {
+            border-left: 4px solid #f87171; /* Tailwind's red-400 */
+            background-color: #fef2f2; /* Tailwind's red-50 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden">
+        
+        <!-- Phần tiêu đề -->
+        <div class="p-6 border-b border-gray-200">
+            <h1 class="text-2xl md:text-3xl font-bold text-center text-gray-800">Bài Tập Trắc Nghiệm Lý-Sinh</h1>
+        </div>
+
+        <!-- Phần Quiz chính -->
+        <div id="quiz-container" class="p-6 md:p-8">
+            <!-- Thông tin tiến độ và câu hỏi -->
+            <div class="mb-6">
+                <div id="progress-text" class="text-sm font-medium text-gray-500 mb-2"></div>
+                <div id="question-text" class="text-lg md:text-xl font-semibold text-gray-900 leading-relaxed"></div>
+            </div>
+
+            <!-- Các lựa chọn đáp án -->
+            <div id="options-container" class="space-y-3">
+                <!-- Các nút đáp án sẽ được chèn vào đây bằng JavaScript -->
+            </div>
+
+            <!-- Nút điều hướng -->
+            <div id="nav-buttons" class="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+                <button id="prev-btn" class="py-2 px-5 rounded-lg font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Câu trước
+                </button>
+                <button id="next-btn" class="py-2 px-5 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200">
+                    Câu tiếp
+                </button>
+                <button id="submit-btn" class="py-2 px-5 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition-all duration-200 hidden">
+                    Nộp bài
+                </button>
+            </div>
+        </div>
+
+        <!-- Màn hình kết quả (ẩn ban đầu) -->
+        <div id="results-container" class="p-6 md:p-8 hidden">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Hoàn thành!</h2>
+            <p id="score-text" class="text-xl text-center font-semibold text-blue-600 mb-8"></p>
+
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Xem lại đáp án:</h3>
+            <div id="review-container" class="max-h-[400px] overflow-y-auto space-y-4 pr-2">
+                <!-- Phần xem lại sẽ được chèn vào đây -->
+            </div>
+
+            <button id="restart-btn" class="w-full mt-8 py-3 px-5 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200">
+                Làm lại từ đầu
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DỮ LIỆU QUIZ ---
+        // Dữ liệu thô được trích xuất từ tệp JSON của bạn
+        const rawQuizData = [
+            {
+              "page": 4,
+              "question_number": 1,
+              "question_text": "Theo nhiệt động lực học, cơ thể sống là một hệ:",
+              "options": {
+                "A": "Hệ kín",
+                "B": "Hệ mở",
+                "C": "Hệ cô lập",
+                "D": "Không thuộc cả 3 loại hệ kể trên"
+              }
+            },
+            {
+              "page": 4,
+              "question_number": 2,
+              "question_text": "Nitơ ở dạng lỏng có thể tồn tại ở nhiệt độ 4 K. Khi đổi sang thang Celcius nó có nhiệt độ là:",
+              "options": {
+                "A": "-277 °C",
+                "B": "-196 °C",
+                "C": "-269 °C",
+                "D": "-96 °C"
+              }
+            },
+            {
+              "page": 4,
+              "question_number": 3,
+              "question_text": "Nhiệt dung riêng trung bình của cơ thể người là nhiêu cal/gam.độ:",
+              "options": {
+                "A": "0,83",
+                "B": "0,78",
+                "C": "0,90",
+                "D": "0,40"
+              }
+            },
+            {
+              "page": 10,
+              "question_number": 1,
+              "question_text": "Nếu một vật có vị trí khối tâm càng thấp, mặt chân đế càng rộng thì",
+              "options": {
+                "A": "Càng ổn định",
+                "B": "Dễ ngã",
+                "C": "Không cân bằng",
+                "D": "Cả A, B, C đều sai"
+              }
+            },
+            {
+              "page": 10,
+              "question_number": 2,
+              "question_text": "Sự cân bằng của cơ thể ở tư thế đứng dựa trên:",
+              "options": {
+                "A": "Vị trí khối tâm rơi trong mặt chân đế là bình diện của hai chân.",
+                "B": "Chỉ cần gập người thấp xuống là có thể cân bằng",
+                "C": "Vị trí khối tâm nằm ngoài với mặt chân đế.",
+                "D": "Người càng thấp thì càng cân bằng."
+              }
+            },
+            {
+              "page": 10,
+              "question_number": 3,
+              "question_text": "Lý do một người mang vật nặng sau lưng thì đi cúi người về phía trước:",
+              "options": {
+                "A": "Để tổng hợp tất cả các lực thành phần rơi vào mặt chân đế của cơ thể để không bị ngã",
+                "B": "Để triệt tiêu các momen có tác dụng làm quay cơ thể.",
+                "C": "Để tạo ra những moment ngược lại dưới tác dụng làm quay cơ thể của momen do vật nặng gây ra.",
+                "D": "Tất cả đều đúng"
+              }
+            },
+            {
+              "page": 15,
+              "question_number": 1,
+              "question_text": "Một người có khối lượng 60 kg đứng trên một tấm ván chiều dài 5 m, ngang 0,2 m. Lấy g=10m/s². Áp suất tác dụng lên tấm ván là:",
+              "options": {
+                "A": "60 Pa",
+                "B": "500 N/m²",
+                "C": "600 N/m²",
+                "D": "700 N/m²"
+              }
+            },
+            {
+              "page": 15,
+              "question_number": 2,
+              "question_text": "Độ tăng áp suất của chất lỏng trong một ống tiêm khi cô y tá tác dụng một lực 40 N vào pittong của ống tiêm có bán kính 1,2 cm là:",
+              "options": {
+                "A": "8,84 × 10⁴ N/m²",
+                "B": "8,84 × 10⁴ atm",
+                "C": "11,1 × 10⁴ Pa",
+                "D": "11,1 × 10⁴ mmHg"
+              }
+            },
+            {
+              "page": 15,
+              "question_number": 3,
+              "question_text": "Một bình khí với nắp đậy có diện tích 80 cm². Áp suất khí quyển bên ngoài bình là 1,01×10⁵ Pa. Lực cần thiết để mở được nắp bình này là 600 N. Áp suất của khí trong bình là:",
+              "options": {
+                "A": "2,6 × 10⁵ Pa",
+                "B": "6,35 × 10⁴ Pa",
+                "C": "7,5 × 10⁴ Pa",
+                "D": "1,76 × 10⁵ Pa"
+              }
+            },
+            {
+              "page": 25,
+              "question_number": 1,
+              "question_text": "Tính chất nào sau đây không phải là của phân tử của vật chất ở thể khí?",
+              "options": {
+                "A": "Chuyển động hỗn loạn xung quanh các vị trí cân bằng cố định.",
+                "B": "Chuyển động hỗn loạn.",
+                "C": "Chuyển động hỗn loạn và không ngừng.",
+                "D": "Chuyển động không ngừng."
+              }
+            },
+            {
+              "page": 25,
+              "question_number": 2,
+              "question_text": "Cho 5 trường hợp khí lý tưởng bên dưới, đều chứa cùng số phân tử. Trường hợp nào có nhiệt độ cao nhất?",
+              "options": {
+                "A": "10⁵ Pa và V = 10 cm³",
+                "B": "3.10⁵ Pa và V = 6 cm³",
+                "C": "4.10⁵ Pa và V = 4 cm³",
+                "D": "6.10⁵ Pa và V = 2 cm³"
+              }
+            },
+            {
+              "page": 25,
+              "question_number": 3,
+              "question_text": "Một khối khí lý tưởng trãi qua một quá trình đẳng nhiệt với áp suất và thể tích ở đầu quá trình là 2 × 10⁵ Pa và 6cm³. Trong các trường hợp dưới đây, trường hợp nào có thể là áp suất và thể tích của khối khí ở cuối quá trình trên ?",
+              "options": {
+                "A": "p = 2 × 10⁵ Pa và V = 10 cm³",
+                "B": "p = 3 × 10⁵ Pa và V = 6 cm³",
+                "C": "p = 4 × 10⁵ Pa và V = 4 cm³",
+                "D": "p = 6 × 10⁵ Pa và V = 2 cm³"
+              }
+            },
+            {
+              "page": 34,
+              "question_number": 1,
+              "question_text": "Sự truyền sóng là :",
+              "options": {
+                "A": "quá trình vận chuyển vật chất trong môi trường.",
+                "B": "phương dao động của các phần tử môi trường vuông góc với phương truyền sóng.",
+                "C": "quá trình lan truyền các dao động cơ học trong môi trường vật chất.",
+                "D": "phương dao động của các phần tử môi trường cùng phương với phương truyền sóng."
+              }
+            },
+            {
+              "page": 34,
+              "question_number": 2,
+              "question_text": "Một vật thực hiện 20 dao động hoàn chỉnh trong 10s. Chu kỳ dao động của vật là:",
+              "options": {
+                "A": "0,5 s",
+                "B": "2 Hz",
+                "C": "0,5 Hz",
+                "D": "2 s"
+              }
+            },
+            {
+              "page": 34,
+              "question_number": 3,
+              "question_text": "Một sóng ngang đang lan truyền về phía phải như hình. Ký tự mô tả độ dài nào là bước sóng của sóng này?",
+              "options": {
+                "A": "A",
+                "B": "B",
+                "C": "C",
+                "D": "D"
+              }
+            },
+            {
+              "page": 38,
+              "question_number": 1,
+              "question_text": "Cơ thể sống khác với các hệ vật lý mở khác ở các điểm:",
+              "options": {
+                "A": "Là một dạng tồn tại đặc biệt của protid và các chất tạo thành",
+                "B": "Có khả năng tự tái tạo",
+                "C": "Có khả năng tự phát triển",
+                "D": "Tất cả các ý trên"
+              },
+              "exam_type": "Đề 1"
+            },
+            {
+              "page": 39,
+              "question_number": 2,
+              "question_text": "Khi hệ cô lập thực hiện một chu trình thì:",
+              "options": {
+                "A": "Độ biến thiên nội năng của hệ luôn dương",
+                "B": "Độ biến thiên nội năng của hệ luôn âm",
+                "C": "Độ biến thiên nội năng của hệ luôn bằng không",
+                "D": "Độ biến thiên nội năng của hệ không thể xác định"
+              },
+              "exam_type": "Đề 1"
+            },
+            {
+              "page": 39,
+              "question_number": 3,
+              "question_text": "Helium ở dạng lỏng có thể tồn tại ở nhiệt độ 4 K. Khi đổi sang thang Celcius nó có nhiệt độ là:",
+              "options": {
+                "A": "277°C",
+                "B": "-37°C",
+                "C": "-269°C",
+                "D": "-277°C"
+              },
+              "exam_type": "Đề 1"
+            },
+            {
+              "page": 48,
+              "question_number": 1,
+              "question_text": "Một đoạn dây kéo căng phát âm thanh tần số 200 Hz. Nếu tăng lực căng dây 4 lần và giảm chiều dài dây 4 lần thì tần số âm phát ra lúc bấy giờ là:",
+              "options": {
+                "A": "25 Hz",
+                "B": "200 Hz",
+                "C": "400 Hz",
+                "D": "1600 Hz"
+              },
+              "exam_type": "Đề 2"
+            },
+            {
+              "page": 48,
+              "question_number": 2,
+              "question_text": "Giả sử máu ở động mạch chủ bắt đầu chảy rối khi số Reynold là 2010. Xác định vận tốc tới hạn vc ? Cho biết khối lượng riêng của máu là 1.04 g/cm³, độ nhớt của máu là 0.045 poise và đường kính động mạch chủ là 1.9 cm.",
+              "options": {
+                "A": "47,6 cm/s",
+                "B": "87 cm/s",
+                "C": "42.3 cm/s",
+                "D": "45.8 cm/s"
+              },
+              "exam_type": "Đề 2"
+            },
+            {
+              "page": 48,
+              "question_number": 3,
+              "question_text": "Hãy sắp xếp theo thứ tự tăng dần về năng lượng photon của các vùng: Tia X, ánh sáng đỏ (ASÐ), ánh sáng xanh (ASX), tia gamma, tử ngoại (TN)",
+              "options": {
+                "A": "ASX, ASÐ, TN, Tia X, Tia gamma",
+                "B": "TN, ASÐ, ASX, Tia X, Tia gamma",
+                "C": "ASÐ, ASX, TN, Tia X, Tia gamma",
+                "D": "ASÐ, ASX, TN, Tia gamma, Tia X"
+              },
+              "exam_type": "Đề 2"
+            },
+            {
+              "page": 57,
+              "question_number": 1,
+              "question_text": "Nguyên lý 1 nhiệt động lực học có nhược điểm:",
+              "options": {
+                "A": "Chỉ cho biết khả năng sinh công",
+                "B": "Không cho biết chiều diễn biến của quá trình diễn tiến của hệ",
+                "C": "Chỉ cho biết quá trình truyền nhiệt",
+                "D": "Không cho biết sự biến đổi nội năng của hệ"
+              },
+              "exam_type": "Đề 3"
+            },
+            {
+              "page": 57,
+              "question_number": 2,
+              "question_text": "Khi truyền cho hệ khí một nhiệt lượng 200 cal, hệ thực hiện công lên ngoại vật là 336 J thì nội năng của hệ biến đổi một lượng là:",
+              "options": {
+                "A": "536 J",
+                "B": "100 J",
+                "C": "500 J",
+                "D": "36 J"
+              },
+              "exam_type": "Đề 3"
+            },
+            {
+              "page": 57,
+              "question_number": 3,
+              "question_text": "Trường hợp nào sau đây không thuộc hệ kín?",
+              "options": {
+                "A": "Tế bào sống trong cơ thể",
+                "B": "Ông nghiệm chứa hóa chất được đậy nắp kín đang được đun",
+                "C": "Đun ấm nước được đậy kín",
+                "D": "Một ống nghiêm được đậy kín đang phản ứng dưới xúc tác của ánh sáng"
+              },
+              "exam_type": "Đề 3"
+            },
+            {
+              "page": 64,
+              "question_number": 1,
+              "question_text": "Cho hai điện tích q1, q2. Nếu độ lớn điện tích q1 giảm một nửa, đồng thời khoảng cách giữa chúng tăng gấp đôi thì lực tương tác sẽ:",
+              "options": {
+                "A": "Tăng 4 lần",
+                "B": "Giảm 4 lần",
+                "C": "Giảm 8 lần",
+                "D": "Không thay đổi"
+              },
+              "chapter": "Bài 6. Điện và sự sống"
+            },
+            {
+              "page": 64,
+              "question_number": 2,
+              "question_text": "Hai electron (e1 và e2) và một proton (p) nằm trên một đường thẳng, như hình. Hướng của lực do e2 tác dụng lên e1, lực do p tác dụng lên e1, và lực tông hợp tác dụng lên e1, theo thứ tự này lần lượt là:",
+              "options": {
+                "A": "→,→,→",
+                "B": "←,→,→",
+                "C": "←,←,→",
+                "D": "←,←,←",
+                "E": "→,←,←"
+              },
+              "chapter": "Bài 6. Điện và sự sống",
+              "note": "Image context needed for full understanding of arrows"
+            },
+            {
+              "page": 64,
+              "question_number": 3,
+              "question_text": "Hai điện tích được sắp xếp như hình. Một điện tích thứ ba ( + 1C) phải đặt ở miền nào để lực điện tổng cộng tác dụng lên nó bằng không?",
+              "options": {
+                "A": "Chỉ có miền I",
+                "B": "Miền I và miền II",
+                "C": "Chỉ có miền III",
+                "D": "Miền I và miền III"
+              },
+              "chapter": "Bài 6. Điện và sự sống",
+              "note": "Image context needed for full understanding of regions"
+            },
+            {
+              "page": 76,
+              "question_number": 1,
+              "question_text": "Hãy sắp xếp theo thứ tự tăng dần về năng lượng mỗi photon của các vùng: Tia gamma, ánh sáng nhìn thấy (ASNT), hồng ngoại (HN), tử ngoại (TN)",
+              "options": {
+                "A": "Tia gamma, TN, HN, ASNT",
+                "B": "HN, ASNT, TN, Tia gamma",
+                "C": "TN, ASNT, HN, Tia gamma",
+                "D": "Tia gamma, TN, ASNT, HN"
+              },
+              "chapter": "Bài 7. Ánh sáng và cơ thể sống"
+            },
+            {
+              "page": 78,
+              "question_number": 2,
+              "question_text": "Hãy sắp xếp các bức xạ điện từ dưới đây theo thứ tự giảm dần của năng lượng một photon",
+              "options": {
+                "A": "1. Tia gamma, 2. Ánh sáng đỏ, 3. Tia X, 4. Sóng vô tuyến",
+                "B": "1. Tia gamma, 3. Tia X, 2. Ánh sáng đỏ, 4. Sóng vô tuyến",
+                "C": "4. Sóng vô tuyến, 2. Ánh sáng đỏ, 1. Tia gamma, 3. Tia X",
+                "D": "4. Sóng vô tuyến, 2. Ánh sáng đỏ, 3. Tia X, 1. Tia gamma"
+              },
+              "chapter": "Bài 7. Ánh sáng và cơ thể sống",
+              "note": "Options listed are already sorted, assuming options A,B,C,D are choices of sorting order"
+            },
+            {
+              "page": 78,
+              "question_number": 3,
+              "question_text": "Hãy sắp xếp các bức xạ điện từ dưới đây theo thứ tự giảm dần của năng lượng một photon",
+              "options": {
+                "A": "Tia hồng ngoại, ánh sáng tím, tia tử ngoại, tia Rơn-ghen",
+                "B": "Ánh sáng tím, tia hồng ngoại, tia tử ngoại, tia Rơn-ghen",
+                "C": "Tia Rơnghen, tia tử ngoại, ánh sáng tím, tia hồng ngoại, sóng vô tuyến",
+                "D": "Tia Gamma, vi sóng, tia tử ngoại, tia hồng ngoại, sóng vô tuyến"
+              },
+              "chapter": "Bài 7. Ánh sáng và cơ thể sống"
+            },
+            {
+              "page": 84,
+              "question_number": 1,
+              "question_text": "Cấu tạo của hạt nhân Liti (⁷Li) gồm:",
+              "options": {
+                "A": "3 proton và 7 nơtron",
+                "B": "3 proton và 3 electron",
+                "C": "3 proton, 4 nơtron và 3 electron",
+                "D": "3 proton và 4 nơtron"
+              },
+              "chapter": "Bài 8. Bức xạ ion hóa và cơ thể sống"
+            },
+            {
+              "page": 84,
+              "question_number": 2,
+              "question_text": "Cấu tạo của hạt nhân Nhôm (²⁷Al) gồm:",
+              "options": {
+                "A": "13 proton và 27 nơtron",
+                "B": "13 proton và 14 electron",
+                "C": "14 proton và 13 nơtron",
+                "D": "13 proton và 14 nơtron"
+              },
+              "chapter": "Bài 8. Bức xạ ion hóa và cơ thể sống"
+            },
+            {
+              "page": 84,
+              "question_number": 3,
+              "question_text": "Một hạt beta là:",
+              "options": {
+                "A": "một hạt nhân Heli",
+                "B": "một hạt electron hoặc một hạt positron",
+                "C": "hạt nhân nguyên tử hidro",
+                "D": "một hạt mang điện âm nào đó"
+              },
+              "chapter": "Bài 8. Bức xạ ion hóa và cơ thể sống"
+            },
+            {
+              "page": 89,
+              "question_number": 1,
+              "question_text": "Mối quan ngại chính khi dùng MRI là điều nào sau đây:",
+              "options": {
+                "A": "Phản ứng phụ của dược chất.",
+                "B": "Lạnh quá mức.",
+                "C": "Dùng bức xạ ion hóa liều cao",
+                "D": "Bỏng cục bộ do có mảnh kim loại trong cơ thể."
+              },
+              "chapter": "Bài 9. Ứng dụng một số kỹ thuật vật lý nguyên tử và hạt nhân vào y sinh học"
+            },
+            {
+              "page": 89,
+              "question_number": 2,
+              "question_text": "Chọn một phát biểu đúng:",
+              "options": {
+                "A": "Để tạo ảnh lát cắt trong MRI thì cơ thể cần đặt vào một gradient từ trường.",
+                "B": "MRI là viết tắt của từ Magnetic Resolution Imaging",
+                "C": "Thời gian T1, T2 và mật độ proton dp là các thông tin nhiễu trong quá trình tạo ảnh MRI.",
+                "D": "Tần số Larmor tỉ lệ nghịch với từ trường tác dụng."
+              },
+              "chapter": "Bài 9. Ứng dụng một số kỹ thuật vật lý nguyên tử và hạt nhân vào y sinh học"
+            },
+            {
+              "page": 90,
+              "question_number": 3,
+              "question_text": "Tần số chuyển động tiến động Larmor quanh từ trường 1 T của momen từ hạt nhân là (biết tỉ số từ hồi chuyển γ = 2.68 x 10⁸ T⁻¹s⁻¹):",
+              "options": {
+                "A": "43 kHz",
+                "B": "43 MHz",
+                "C": "43 GHz",
+                "D": "268 MHz"
+              },
+              "chapter": "Bài 9. Ứng dụng một số kỹ thuật vật lý nguyên tử và hạt nhân vào y sinh học"
+            }
+        ];
+
+        // *** QUAN TRỌNG ***
+        // Xử lý dữ liệu thô: Thêm đáp án đúng.
+        // Tệp JSON không cung cấp đáp án đúng, vì vậy chúng ta gán 'A' làm đáp án mặc định
+        // BẠN CẦN THAY ĐỔI GIÁ TRỊ 'correct' NÀY BẰNG ĐÁP ÁN ĐÚNG
+        const allQuestions = rawQuizData.map(q => ({ // Đổi tên từ quizData -> allQuestions
+            ...q,
+            // Chú ý: Thay 'A' bằng đáp án đúng cho mỗi câu hỏi
+            // Ví dụ: correct: q.question_number === 1 ? 'B' : (q.question_number === 2 ? 'C' : 'A')
+            correct: 'A' 
+        }));
+
+        // --- BIẾN TRẠNG THÁI ---
+        let currentQuizData = []; // Dữ liệu quiz đã được xáo trộn
+        let currentQuestionIndex = 0;
+        let userAnswers = {}; // Lưu trữ {indexCâuHỏi: 'ĐápÁn'}
+
+        // --- DOM ELEMENTS ---
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const progressText = document.getElementById('progress-text');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const scoreText = document.getElementById('score-text');
+        const reviewContainer = document.getElementById('review-container');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // --- FUNCTIONS ---
+
+        /** Xáo trộn một mảng (thuật toán Fisher-Yates) và trả về mảng mới */
+        function shuffleArray(array) {
+            let newArray = [...array]; // Tạo bản sao
+            let currentIndex = newArray.length,  randomIndex;
+
+            // While there remain elements to shuffle.
+            while (currentIndex != 0) {
+                // Pick a remaining element.
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+
+                // And swap it with the current element.
+                [newArray[currentIndex], newArray[randomIndex]] = [
+                newArray[randomIndex], newArray[currentIndex]];
+            }
+            return newArray;
+        }
+
+        /** Khởi tạo quiz khi tải trang */
+        function initQuiz() {
+            // Gắn sự kiện cho các nút
+            prevBtn.addEventListener('click', showPrevQuestion);
+            nextBtn.addEventListener('click', showNextQuestion);
+            submitBtn.addEventListener('click', showResults);
+            restartBtn.addEventListener('click', restartQuiz);
+
+            // Xáo trộn và tải câu hỏi đầu tiên
+            currentQuizData = shuffleArray(allQuestions);
+            loadQuestion(currentQuestionIndex);
+        }
+
+        /** Tải và hiển thị một câu hỏi dựa trên index */
+        function loadQuestion(index) {
+            const question = currentQuizData[index];
+            
+            // Cập nhật văn bản
+            progressText.innerText = `Câu ${index + 1} / ${currentQuizData.length}`;
+            questionText.innerText = question.question_text;
+            
+            // Xóa các lựa chọn cũ
+            optionsContainer.innerHTML = '';
+
+            // Tạo các nút lựa chọn mới
+            for (const key in question.options) {
+                const optionButton = document.createElement('button');
+                optionButton.dataset.option = key;
+                optionButton.className = "w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-150 text-gray-700";
+                
+                // Sử dụng innerHTML để hiển thị đúng các ký tự đặc biệt (ví dụ: 10⁵)
+                optionButton.innerHTML = `<span class="font-bold mr-2">${key}.</span> ${question.options[key]}`;
+                
+                optionButton.addEventListener('click', () => selectAnswer(index, key, optionButton));
+
+                // Kiểm tra nếu đáp án này đã được chọn trước đó
+                if (userAnswers[index] === key) {
+                    optionButton.classList.add('option-selected');
+                }
+
+                optionsContainer.appendChild(optionButton);
+            }
+
+            // Cập nhật trạng thái các nút điều hướng
+            updateNavButtons();
+        }
+
+        /** Xử lý khi người dùng chọn một đáp án */
+        function selectAnswer(index, optionKey, selectedButton) {
+            // Lưu trữ câu trả lời
+            userAnswers[index] = optionKey;
+
+            // Cập nhật giao diện: bỏ chọn tất cả các nút khác...
+            const allOptionButtons = optionsContainer.querySelectorAll('button');
+            allOptionButtons.forEach(btn => btn.classList.remove('option-selected'));
+            
+            // ...và chỉ chọn nút vừa được nhấn
+            selectedButton.classList.add('option-selected');
+            
+            // Tự động chuyển câu hỏi tiếp theo sau khi chọn
+            // setTimeout(() => {
+            //     showNextQuestion();
+            // }, 300); // Bạn có thể bỏ comment này nếu muốn tự động chuyển
+        }
+
+        /** Cập nhật hiển thị của các nút Prev/Next/Submit */
+        function updateNavButtons() {
+            // Nút "Câu trước"
+            prevBtn.disabled = (currentQuestionIndex === 0);
+
+            // Nút "Câu tiếp" và "Nộp bài"
+            if (currentQuestionIndex === currentQuizData.length - 1) {
+                // Đây là câu hỏi cuối cùng
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                // Không phải câu cuối cùng
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        /** Hiển thị câu hỏi tiếp theo */
+        function showNextQuestion() {
+            if (currentQuestionIndex < currentQuizData.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion(currentQuestionIndex);
+            }
+        }
+
+        /** Hiển thị câu hỏi trước đó */
+        function showPrevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion(currentQuestionIndex);
+            }
+        }
+
+        /** Tính điểm và hiển thị màn hình kết quả */
+        function showResults() {
+            // Ẩn quiz, hiện kết quả
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            let score = 0;
+            reviewContainer.innerHTML = ''; // Xóa review cũ
+
+            // Tính điểm và tạo phần xem lại
+            currentQuizData.forEach((question, index) => {
+                const userAnswer = userAnswers[index];
+                const correctAnswer = question.correct;
+                const isCorrect = (userAnswer === correctAnswer);
+
+                if (isCorrect) {
+                    score++;
+                }
+
+                // Tạo thẻ review cho mỗi câu
+                const reviewCard = document.createElement('div');
+                reviewCard.className = `p-4 border rounded-lg ${isCorrect ? 'review-correct' : 'review-wrong'}`;
+                
+                reviewCard.innerHTML = `
+                    <p class="font-semibold text-gray-800 mb-2">Câu ${index + 1}: ${question.question_text}</p>
+                    <p class="text-sm ${isCorrect ? 'text-green-700' : 'text-red-700'}">
+                        Bạn chọn: <span class="font-medium">${userAnswer ? `${userAnswer}. ${question.options[userAnswer]}` : 'Chưa trả lời'}</span>
+                    </p>
+                    ${!isCorrect ? `
+                        <p class="text-sm text-green-700">
+                            Đáp án đúng: <span class="font-medium">${correctAnswer}. ${question.options[correctAnswer]}</span>
+                        </p>
+                    ` : ''}
+                `;
+                reviewContainer.appendChild(reviewCard);
+            });
+
+            // Hiển thị điểm số
+            scoreText.innerText = `Bạn đúng ${score} / ${currentQuizData.length} câu!`;
+        }
+
+        /** Bắt đầu lại bài quiz */
+        function restartQuiz() {
+            // Reset trạng thái
+            currentQuizData = shuffleArray(allQuestions); // Xáo trộn lại câu hỏi
+            currentQuestionIndex = 0;
+            userAnswers = {};
+
+            // Chuyển đổi màn hình
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+
+            // Tải lại câu hỏi đầu tiên
+            loadQuestion(currentQuestionIndex);
+        }
+
+        // --- BẮT ĐẦU QUIZ ---
+        // Chờ cho tất cả nội dung trang được tải xong rồi mới chạy script
+        document.addEventListener('DOMContentLoaded', initQuiz);
+
+    </script>
+</body>
+</html>
